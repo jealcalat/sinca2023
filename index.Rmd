@@ -6,7 +6,7 @@ date: "`r Sys.Date()`"
 output:
   xaringan::moon_reader:
     includes:
-      after_body: ["libs/typed.js", timer.html]
+      after_body: ["libs/typed.js"]
     css: [xaringan-themer.css, libs/my-theme.css]
     nature:
       ratio: 16:9
@@ -14,8 +14,6 @@ output:
       highlightLines: true
       countIncrementalSlides: false
     seal: false
-  header-includes:
-    - \usepackage{array}
 ---
 
 ```{r setup, include=FALSE}
