@@ -1,7 +1,9 @@
 {css, echo = F}
 .content-box { 
   box-sizing: border-box;
-  background-color: #e2e2e2;
+  background-color: #a0c3b4;
+  font-size: larger;
+  font-weight: bold;
 }
 .content-box-blue,
 .content-box-gray,

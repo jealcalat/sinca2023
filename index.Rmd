@@ -385,3 +385,11 @@ class: middle
 * Exploring other models (LSTM, AR-HMM, etc).
 * Fine tune the VAE.
 * Validate the model and the states with trained observers.
+
+---
+class: middle
+
+.center[
+  # Gracias
+.content-box[jealcalat@gmail.com]
+]
