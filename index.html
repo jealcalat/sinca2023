@@ -4,8 +4,8 @@
     <title>Descubrimiento de patrones en datos de movimiento usando modelos supervisados y no supervisados</title>
     <meta charset="utf-8" />
     <meta name="author" content="Emmanuel Alcalá" />
-    <meta name="date" content="2023-11-15" />
-    <script src="sinca_2023_files/header-attrs/header-attrs.js"></script>
+    <meta name="date" content="2023-11-16" />
+    <script src="index_files/header-attrs/header-attrs.js"></script>
     <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
     <link rel="stylesheet" href="libs/my-theme.css" type="text/css" />
   </head>
@@ -144,55 +144,165 @@ $(document).ready(function() {
 ---
 class: middle
 
-# The necessity of measuring the spatial domain
+# The importance of measuring the spatial domain
 
 --
 
-Típicamente, los experimentos miden la conducta sujeta a dos restricciones: 
+Typically, experiments measure behavior subject to two constraints:
 
 --
 
-* un conjunto de respuestas discretas predefinidas por el experimentador
+* a set of discrete responses predefined by the experimenter
 
 --
 
-* un paradigma o tradición experimental concreta que dicta, más o menos, qué es importante medir
+* a particular experimental paradigm or tradition that dictates, more or less, what is important to measure
 
 --
 
-Esas dos restricciones, a su vez, están restringidas a al espacio de posibilidades que permite la tecnología.
+These two constraints, in turn, are restricted by the space of possibilities that technology allows.
 
 ---
 class: middle
 
-# The necessity of measuring the spatial domain
+# The importance of measuring the spatial domain
+
+The study of learning and behavior began in *space* (e.g., mazes, open field, etc).
 
 --
 
-El estudio del aprendizaje y la conducta comenzó en el *espacio* 
+With the invention of the operant conditioning chamber, the experimental study of behavior focused on time (interruptions of switches per unit of time, to be precise).
+
+--
+
+The limitations of not measuring the (3) spatial dimension of behavior have been recognized. For example, Davison (2018) describes an experiment by Alsop (1987) where pigeons were unable to discriminate between two magnetic fields. However, Mora et al (2004) achieved discrimination when they allowed pigeons to *walk*.
+
+---
+class: middle
 
 &lt;blockquote&gt;
-But behavior in the one dimension of time cannot properly and fully simulate behavior in time plus the additional 3 dimensions of space, be- cause time is unidirectional and space is bidirectional. 
+But behavior in the one dimension of time cannot properly and fully simulate behavior in time plus the additional 3 dimensions of space, because time is unidirectional and space is bidirectional. 
 .right[-- &lt;cite&gt;Michael Davison, 2018&lt;/cite&gt;]
 &lt;/blockquote&gt;
+
+--
+
+To the extent that behavior occurs in space and time, the importance of studying the spatial dynamics of behavior remains an empirical question.
+
+---
+class: middle
+
+--
+
+However, acknowledging it is not enough. Measuring behavior continuously in space increases the number of dimensions, which has long been a technical problem.
+
+--
+
+Here we illustrate a workflow that makes use of recent developments in ML that could help solve these problems.
+
+--
+
+We just explored a class of learning models called *unsupervised* models. These models are used to discover patterns in data without the need for a predefined labels.
+
+---
+class: middle
+
+## Workflow
+
+&lt;img src="img/diagrama_DLC.png" width="80%" style="display: block; margin: auto;" /&gt;
+---
+class: middle
+
+## Data
+
+Data comes from Campos-Ordonez et al (2022). The positional data of mice exposed to Cyclohexane and non-exposed mice was obtained using DeepLabCut (Mathis et al, 2018). Nine bodyparts were tracked: nose, left ear, right ear, neck, middle back, tail base, and three points along the tail.
+
+&lt;img src="img/keypointing.png" width="50%" style="display: block; margin: auto;" /&gt;
+---
+class: middle
+
+Example of reconstruction of a mouse's trajectory using estimated poses with DLC.
+
+&lt;img src="img/T17_EXP_26_ABRIL_PM_tseconds.gif" width="70%" style="display: block; margin: auto;" /&gt;
+&lt;!-- 
+&lt;img src="img/T17_EXP_26_ABRIL_PM_tseconds.gif" width="70%" alt="Description"&gt; --&gt;
+
+---
+class: middle
+
+## Feature engineering
+
+Let `\(\boldsymbol{\gamma}_i(t)=(x_i(t), y_i(t))\)` for bodypart `\(i\)` at time `\(t\)`. The following features were obtaining from the positional data:
+
+&lt;img src="img/features.png" width="60%" style="display: block; margin: auto;" /&gt;
+---
+class: middle
+
+## Embedding using a variational autoencoder
+
+--
+
+A variational autoencoder (VAE) is a generative model that learns a latent space `\(\mathbf{Z}\)`, low-dimensional representation of the data that captures the most important features, from `\(\mathbf{X}\)`. 
+
+--
+
+The VAE is trained to reconstruct the data `\(\mathbf{\tilde{X}}\)` from the latent space, a probability distribution that is assumed to be a multivariate normal distribution.
+
+&lt;img src="img/vae.png" width="60%" style="display: block; margin: auto;" /&gt;
+
+---
+class: middle
+
+## Behavioral segmentation using a hidden Markov model
+
+--
+
+From the latent space (or directly with the features), we can use a hidden Markov model to segment the data into behavioral states. 
+
+--
+
+A hidden Markov model is a generative model that assumes that the data is generated by a Markov process with hidden states. The hidden states are not directly observable, but the data is. The hidden states are assumed to be a Markov process, i.e., the probability of being in a state at time `\(t\)` depends only on the state at time `\(t-1\)`.
+
+---
+class: middle
+
+# Results
+
+## HMM with kinematic features as input
+
+We were able to segment the data in three states using the kinematic features as input to the HMM. Ordering the mean speed or acceleration features by states we can see three modes of locomotion: stop (with micromovements), slow, and fast. However, we were not able to identify some clear patterns like circling.
+
+&lt;img src="img/Fig3.png" width="50%" style="display: block; margin: auto;" /&gt;
+---
+class: middle
+
+## HMM with VAE latent space as input
+
+Using the latent space of the VAE as input to the HMM, we were able to identify several states, two on which included circling
+
+For visualization, because the latent space is still high-dimensional, we used UMAP to reduce the dimensionality to 2D.
+
+UMAP is a non-linear dimensionality reduction algorithm that preserves the global and local structure of the data.
 
 ---
 class: middle, black-slide
 
+Left is UMAP embedding of the latent space of the VAE colored by state from HMM. A dot point is showing the state-space trajectory of a mouse. 
+
 &lt;div style="display: flex;"&gt;
   &lt;div style="flex: 3;"&gt;
-    &lt;video width="100%" height="100%" controls id="my_video"&gt;
+    &lt;video width="90%" height="90%" controls id="my_video"&gt;
       &lt;source src="img/umap_states_vame_first.mp4" type="video/mp4"&gt;
     &lt;/video&gt;
   &lt;/div&gt;
   &lt;div style="flex: 1; text-align: center;"&gt;
-    &lt;p&gt;Primeros&lt;br&gt; dos minutos&lt;/p&gt;
+    &lt;p&gt;Minuto 2&lt;/p&gt;
   &lt;/div&gt;
 &lt;/div&gt;
-&lt;br&gt;
+
 &lt;div style="display: flex;"&gt;
   &lt;div style="flex: 3;"&gt;
-    &lt;video width="100%" height="100%" controls id="my_video"&gt;
+    &lt;video width="90%" height="90%" controls id="my_video"&gt;
       &lt;source src="img/umap_states_vame_circling.mp4" type="video/mp4"&gt;
     &lt;/video&gt;
   &lt;/div&gt;
@@ -200,6 +310,17 @@ class: middle, black-slide
     &lt;p&gt;Minuto 17&lt;/p&gt;
   &lt;/div&gt;
 &lt;/div&gt;
+
+---
+class: middle
+
+## What's next
+
+--
+
+* Exploring other models (LSTM, AR-HMM, etc).
+* Fine tune the VAE.
+* Validate the model and the states with trained observers.
     </textarea>
 <style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
 <script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
