@@ -1,0 +1,257 @@
+---
+title: "Descubrimiento de patrones en datos de movimiento usando modelos supervisados y no supervisados"
+author: "Emmanuel Alcalá"
+institute: "CEIC, Universidad de Guadalajara"
+date: "`r Sys.Date()`"
+output:
+  xaringan::moon_reader:
+    includes:
+      after_body: ["libs/typed.js", timer.html]
+    css: [xaringan-themer.css, libs/my-theme.css]
+    nature:
+      ratio: 16:9
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+    seal: false
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+library(xaringan)
+options(htmltools.dir.version = FALSE)
+opts_chunk$set(
+  echo = FALSE, warning = FALSE, message = FALSE, comment = "#>",
+  fig.path = "figure/", fig.align = "center", fig.height = 8.5,
+  out.width = "100%", fig.show = "hold", fig.retina = 3,
+  cache = TRUE, cache.path = "cache/"
+)
+```
+
+```{r xaringan-themer, include=FALSE, warning=FALSE}
+library(xaringanthemer)
+style_duo(
+  primary_color = "#d5d5d2",
+  secondary_color = "#728C81",
+  text_color = choose_dark_or_light(
+    "#D1C7A8", darken_color("#D1C7A8", 0.9),
+    lighten_color("#537165", 0.99)
+  ),
+  text_font_family = "Latin Modern Sans",
+  text_font_size = "1.2rem",
+  header_font_family = "Latin Modern Sans",
+  # code_font_family = "FiraCode Nerd Font"
+  # header_font_google = google_font("Martel"),
+  # text_font_google = google_font("Lato"),
+  code_font_google = google_font("Fira Mono"),
+  header_h1_font_size = "1.8rem",
+  header_h2_font_size = "1.7rem",
+  colors = c(
+    red = "#f34213",
+    purple = "#3e2f5b",
+    orange = "#c46303f8",
+    green = "#136f63",
+    white = "#FFFFFF",
+    gray = "#c9c9c9",
+    bermellon = "#ebdbb2",
+    black = "#020202",
+    charcoal = "#8393A8",
+    brownish = "#A89883",
+    greenish = "#84a396"
+  )
+)
+```
+
+class: center, title-slide, inverse-slide
+
+<style>
+.title-slide .remark-slide-number {
+  display: none;
+}
+
+.title-slide h1 {
+font-weight: bold;
+font-size: 50px;
+color: #282828;
+}
+
+.title-slide h2 {
+font-weight: bold;
+font-size: 40px;
+color: #282828;
+}
+
+.subtitle-slide h1 {
+  font-weight: bold;
+  font-size: 40px;
+}
+
+.inverse-slide {
+  background-color: #84a396;
+  color: #020202;
+}
+
+
+.black-slide {
+  background-color: #393533;
+  color: #B58322;
+}
+
+</style>
+
+<style>
+.remark-slide-content {
+  font-size: 28px;
+}
+
+</style>
+
+<style>
+
+.center2 {
+  margin: -1%;
+  position: absolute;
+  top: 72%;
+  left: 51%;
+  width: 240px;
+  height: 128px;
+  -ms-transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%);
+}
+
+.logo {
+  position: absolute;
+  top: 1em;
+  right: 1em;
+  width: 110px;
+  height: 128px;
+  z-index: 0;
+}
+
+.my-one-page-font {
+  font-size: 20px;
+}
+
+</style>
+
+<style>
+blockquote {
+    background-color: #afc0d5;
+    /* font face italic */
+    font-style: italic;
+}
+</style>
+
+<style>
+div.footnotes {
+  position: absolute;
+  bottom: 0;
+  margin-bottom: 10px;
+  width: 80%;
+  font-size: 0.6em;
+}
+</style>
+
+<script>
+$(document).ready(function() {
+  $('section:not(.backdrop):not(.title-slide)').append('<div class=\"footnotes\"></div>');
+
+  // Use a regular expression to find and process your custom footnote syntax
+  $('section').each(function() {
+    var slide = $(this);
+    var slideHtml = slide.html();
+
+    slideHtml = slideHtml.replace(/\[\^(\d+)\]:\s*(.*?)\n/g, function(match, fnNum, text) {
+      // Add the footnote text to the footnotes div
+      var footnoteDiv = slide.find('div.footnotes');
+      var existingFootnotes = footnoteDiv.html() || '';
+      footnoteDiv.html(existingFootnotes + fnNum + '. ' + text + '<br/>');
+
+      // Replace the footnote marker in the slide with a superscript number
+      return '<sup>' + fnNum + '</sup>';
+    });
+
+    slide.html(slideHtml);
+  });
+});
+</script>
+
+
+
+# Discovering patterns in motion data using ~~supervised and~~ unsupervised models
+# Emmanuel Alcalá
+## CEIC, Universidad de Guadalajara
+
+.center2[
+```{r echo = FALSE}
+knitr::include_graphics("img/logo_ceic.png")
+```
+]
+
+---
+class: middle
+
+# The necessity of measuring the spatial domain
+
+--
+
+Típicamente, los experimentos miden la conducta sujeta a dos restricciones: 
+
+--
+
+* un conjunto de respuestas discretas predefinidas por el experimentador
+
+--
+
+* un paradigma o tradición experimental concreta que dicta, más o menos, qué es importante medir
+
+--
+
+Esas dos restricciones, a su vez, están restringidas a al espacio de posibilidades que permite la tecnología.
+
+---
+class: middle
+
+# The necessity of measuring the spatial domain
+
+El estudio del aprendizaje y la conducta comenzó en el *espacio* (e.g., laberintos, campo abierto, etc).
+
+--
+
+Con la invención de la caja operante, el estudio experimental de la conducta se enfocó en el tiempo (interrupciones de switches por unidad de tiempo).
+
+--
+
+Se ha reconocido las limitaciones de no medir (3)dimensión espacial de la conducta. Por ejemplo, Davison (2018) describe un experimento de Alsop (1987) en donde palomas no pudieron discriminar entre dos campos magnéticos. Sin embargo, Mora et al (2004) obtuvieron discriminación cuando permitieron *caminar* a las palomas.
+
+---
+
+<blockquote>
+But behavior in the one dimension of time cannot properly and fully simulate behavior in time plus the additional 3 dimensions of space, because time is unidirectional and space is bidirectional. 
+.right[-- <cite>Michael Davison, 2018</cite>]
+</blockquote>
+
+---
+class: middle, black-slide
+
+<div style="display: flex;">
+  <div style="flex: 3;">
+    <video width="100%" height="100%" controls id="my_video">
+      <source src="img/umap_states_vame_first.mp4" type="video/mp4">
+    </video>
+  </div>
+  <div style="flex: 1; text-align: center;">
+    <p>Primeros<br> dos minutos</p>
+  </div>
+</div>
+<br>
+<div style="display: flex;">
+  <div style="flex: 3;">
+    <video width="100%" height="100%" controls id="my_video">
+      <source src="img/umap_states_vame_circling.mp4" type="video/mp4">
+    </video>
+  </div>
+  <div style="flex: 1; text-align: center;">
+    <p>Minuto 17</p>
+  </div>
+</div>
